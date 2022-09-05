@@ -1,0 +1,87 @@
+{
+    "LBL_APP_TITLE": "Carrozzeria Demo",
+    "languages": {
+        "en": "English",
+        "it": "Italian"
+    },
+    "backend":{
+        "LBL_REGISTRATION_DONE": "Registration Done",
+        "LBL_NO_USER_CARD": "No user with this card",
+        "LBL_FINISHED_WORKING": "Finished working",
+        "LBL_NO_REGISTRATION_CURRENT_DAY": "No registration for the current day",
+        "LBL_NO_REGISTRATION": "No record",
+        "LBL_WRONG_LOGIN": "Wrong login",
+        "LBL_ORDER_CLOSED": "Order closed",
+        "LBL_ERROR": "An error as occurred",
+        "LBL_OTHER_TIMESHEET_PROGRESS": "Other timesheet in progress for the current user",
+        "LBL_NEW_TIMESHEET_CREATED": "New timesheet created",
+        "LBL_WRONG_USER":"Timesheet opened from another user",
+        "LBL_LEAVING_ALREADY_REGISTERED": "Leaving already registered",
+        "LBL_ENTRANCE_ALREADY_REGISTERED": "Entrance already registered"
+
+    },
+    "nav": {
+        "home": "Home",
+        "LBL_BTN_OTHER_TIMESHEETS": "Other Timesheets",
+        "LBL_BTN_PRESENCES": "Presences",
+        "LBL_BTN_ENTRY": "Entry",
+        "LBL_BTN_EXIT": "Exit",
+        "LBL_OTHER_TIMESHEETS_TITLE": "Select Activity Type"
+    },
+    "login": {
+        "LBL_LOGIN_TITLE": "Login",
+        "LBL_LOGIN_SUBTITLE":"Enter your personal PIN or scan your ID Card"
+    },
+    "home": {
+        "LBL_BTN_CLOSE": "Close",
+        "LBL_MAIN_TITLE": "Vehicles in Processing",
+        "LBL_OTHER_TITLE": "Other Ongoing Activities",
+        "LBL_LOADING":"Loading",
+        "subject": "Subject",
+        "order_no": "Order Number",
+        "account": "Company",
+        "contact": "Contact",
+        "plate": "License plate",
+        "vehicle": "Vehicle",
+        "chassis_no": "Chassis No.",
+        "description": "Description",
+        "courtesy_car": "Courtesy Car",
+        "LBL_BTN_SHOW_TIMESHEETS": "Show Timesheets",
+        "LBL_TIMESHEETS_LIST": "Processing List",
+        "LBL_EMPTY_TIMESHEETS": "There are no processes",
+        "LBL_SHOW_TIMESHEETS": "Show Timesheets",
+        "LBL_TOTAL_HOURS": "Total Worked Hours"
+    },
+    "keypad": {
+        "LBL_KEYPAD_TITLE": "Login",
+        "LBL_INSERT_PIN": "Enter your personal PIN",
+        "LBL_FORGOT_CARD": "Forgotten Card",
+        "LBL_ADMIN": "Administrator",
+        "LBL_YES": "Yes",
+        "LBL_NO": "No"
+    },
+    "settings": {
+        "LBL_SETTINGS_TITLE": "Settings",
+        "LBL_USERNAME": "User Name",
+        "LBL_LANGUAGE": "Language",
+        "LBL_LOGOUT": "Log off",
+        "LBL_ACCESS_KEY": "Access Key",
+        "LBL_SHOW_CLOSE_BUTTON": "Show project close button",
+        "LBL_CLOSE_PIN_REQUIRED": "Admin PIN required to close an order.",
+        "NAVIGATION_BAR": "Navigation Bar",
+        "MONDAY": "Monday",
+        "TUESDAY": "Tuesday",
+        "WEDNESDAY": "Wednesday",
+        "THURSDAY": "Thursday",
+        "FRIDAY": "Friday",
+        "SATURDAY": "Saturday",
+        "SUNDAY": "Sunday",
+        "LBL_LIGHT": "Light",
+        "LBL_DARK": "Dark",
+        "LBL_COLOR_SELECTION": "Colour Selection",
+        "FACTORY_RESET": "Factory Settings",
+        "LBL_BTN_SAVE": "Save",
+        "LBL_SAVE_SETTINGS": "Settings Saved",
+        "LBL_RESET_CONFIRM": "Continue only if you are sure what you are doing"
+    }
+}

@@ -1,0 +1,31 @@
+<?xml version='1.0'?>
+<module>
+<name>Modulo Lavagna Ordini</name>
+<version>21.10</version>
+<dependencies>
+<vtiger_version>21.10</vtiger_version>
+</dependencies>
+<modulebundle>true</modulebundle>
+<modulelist>
+<dependent_module>
+<name>Presences</name>
+<install_sequence>1</install_sequence>
+<filepath>Presences.zip</filepath>
+</dependent_module>
+<dependent_module>
+<name>Timesheets</name>
+<install_sequence>2</install_sequence>
+<filepath>Timesheets.zip</filepath>
+</dependent_module>
+<dependent_module>
+<name>Vehicles</name>
+<install_sequence>3</install_sequence>
+<filepath>Vehicles.zip</filepath>
+</dependent_module>
+<dependent_module>
+<name>Insurances</name>
+<install_sequence>4</install_sequence>
+<filepath>Insurances.zip</filepath>
+</dependent_module>
+</modulelist>
+</module>

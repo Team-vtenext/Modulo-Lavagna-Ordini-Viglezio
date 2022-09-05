@@ -1,0 +1,85 @@
+{
+  "LBL_APP_TITLE":"Carrozzeria Demo",
+  "languages": {
+    "en": "Inglese",
+    "it": "Italiano"
+},
+"backend":{
+  "LBL_REGISTRATION_DONE": "Registrazione eseguita",
+  "LBL_NO_USER_CARD": "Nessun utente con quesa carta",
+  "LBL_FINISHED_WORKING": "Lavorazione terminata",
+  "LBL_NO_REGISTRATION_CURRENT_DAY": "Nessuna registrazione per il giorno corrente",
+  "LBL_NO_REGISTRATION": "Nessuna registrazione",
+  "LBL_WRONG_LOGIN": "Login errato",
+  "LBL_ORDER_CLOSED": "Ordine Chiuso",
+  "LBL_ERROR": "Si è verificato un errore",
+  "LBL_OTHER_TIMESHEET_PROGRESS": "Altra lavorazione aperta per questo utente",
+  "LBL_NEW_TIMESHEET_CREATED": "Nuova lavorazione creata",
+  "LBL_WRONG_USER":"Lavorazione aperta da un altro utente",
+  "LBL_LEAVING_ALREADY_REGISTERED": "Uscita già registrata",
+  "LBL_ENTRANCE_ALREADY_REGISTERED": "Entrata già registrata"
+},
+  "nav": {
+    "home": "Home",
+    "LBL_BTN_OTHER_TIMESHEETS": "Altre Lavorazioni",
+    "LBL_BTN_PRESENCES": "Mie Timbrature",
+    "LBL_BTN_ENTRY":"Entrata",
+    "LBL_BTN_EXIT":"Uscita",
+    "LBL_OTHER_TIMESHEETS_TITLE": "Seleziona Tipo di Attività"
+  },
+  "login": {
+    "LBL_LOGIN_TITLE": "Effettua l'accesso",
+    "LBL_LOGIN_SUBTITLE":"Inserisci il tuo PIN personale o scansiona la carta"
+},
+  "home": {
+    "LBL_BTN_CLOSE":"Chiudi",
+    "LBL_MAIN_TITLE":"Auto in Lavorazione",
+    "LBL_OTHER_TITLE":"Altre Attività in Corso",
+    "LBL_LOADING":"Caricamento",
+    "subject":"Soggetto",
+    "order_no":"Numero Ordine",
+    "account":"Azienda",
+    "contact":"Contatto",
+    "plate":"Targa",
+    "vehicle":"Veicolo",
+    "chassis_no":"No. Telaio",
+    "description":"Descrizione",
+    "courtesy_car":"Auto di Cortesia",
+    "LBL_BTN_SHOW_TIMESHEETS":"Mostra Lavorazioni",
+    "LBL_TIMESHEETS_LIST":"Lista Lavorazioni",
+    "LBL_EMPTY_TIMESHEETS":"Non sono presenti Lavorazioni",
+    "LBL_SHOW_TIMESHEETS": "Mostra lavorazioni",
+    "LBL_TOTAL_HOURS": "Totale Ore Lavorate"
+  },
+  "keypad": {
+      "LBL_KEYPAD_TITLE": "Effettua l'accesso",
+      "LBL_INSERT_PIN": "Inserisci il tuo PIN personale",
+      "LBL_FORGOT_CARD": "Dimenticato Tessera",
+      "LBL_ADMIN": "Amministratore",
+      "LBL_YES":"Si",
+      "LBL_NO":"No"
+    },
+  "settings": {
+    "LBL_SETTINGS_TITLE":"Impostazioni",
+    "LBL_USERNAME":"Nome Utente",
+    "LBL_LANGUAGE": "Lingua",
+    "LBL_LOGOUT":"Disconnetti",
+    "LBL_ACCESS_KEY":"Chiave di Accesso",
+    "LBL_SHOW_CLOSE_BUTTON":"Mostra il pulsante di chiusura progetto",
+    "LBL_CLOSE_PIN_REQUIRED":"Richiesto il PIN admin per chiudere un ordine.",
+    "NAVIGATION_BAR":"Barra di Navigazione",
+    "MONDAY":"Lunedì",
+    "TUESDAY":"Martedì",
+    "WEDNESDAY":"Mercoledì",
+    "THURSDAY":"Giovedì",
+    "FRIDAY":"Venerdì",
+    "SATURDAY":"Sabato",
+    "SUNDAY":"Domenica",
+    "LBL_LIGHT":"Chiaro",
+    "LBL_DARK":"Scuro",
+    "LBL_COLOR_SELECTION":"Selezione dei Colori",
+    "FACTORY_RESET":"Impostazioni di Fabbrica",
+    "LBL_BTN_SAVE":"Salva",
+    "LBL_SAVE_SETTINGS": "Impostazioni Salvate"
+  }
+}
