@@ -34,6 +34,9 @@
     },
     "home": {
         "LBL_BTN_CLOSE": "Close",
+        "LBL_BTN_CREATE_DEPOSIT": "Create Deposit",
+        "LBL_BTN_START_WORK": "Start Working",
+        "LBL_BTN_STOP_WORK": "Stop Working",
         "LBL_MAIN_TITLE": "Vehicles in Processing",
         "LBL_OTHER_TITLE": "Other Ongoing Activities",
         "LBL_LOADING":"Loading",
@@ -44,6 +47,7 @@
         "plate": "License plate",
         "vehicle": "Vehicle",
         "chassis_no": "Chassis No.",
+        "kilometers": "Kilometers",
         "description": "Description",
         "courtesy_car": "Courtesy Car",
         "LBL_BTN_SHOW_TIMESHEETS": "Show Timesheets",

@@ -33,6 +33,9 @@
 },
   "home": {
     "LBL_BTN_CLOSE":"Chiudi",
+    "LBL_BTN_CREATE_DEPOSIT": "Crea Deposito",
+    "LBL_BTN_START_WORK":"Avvia Lavorazione",
+    "LBL_BTN_STOP_WORK": "Ferma Lavorazione",
     "LBL_MAIN_TITLE":"Auto in Lavorazione",
     "LBL_OTHER_TITLE":"Altre Attività in Corso",
     "LBL_LOADING":"Caricamento",
@@ -43,6 +46,7 @@
     "plate":"Targa",
     "vehicle":"Veicolo",
     "chassis_no":"No. Telaio",
+    "kilometers":"Kilometri",
     "description":"Descrizione",
     "courtesy_car":"Auto di Cortesia",
     "LBL_BTN_SHOW_TIMESHEETS":"Mostra Lavorazioni",

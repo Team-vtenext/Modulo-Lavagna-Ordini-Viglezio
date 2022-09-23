@@ -176,7 +176,7 @@
   };
 </script>
 
-<main class="container-fluid">
+<main role="main" class="container-fluid">
   <div class="row justify-content-center">
     <div class="col-sm-6 col-md-4  text-center">
       <h1>{$_('settings.LBL_SETTINGS_TITLE')}</h1>
