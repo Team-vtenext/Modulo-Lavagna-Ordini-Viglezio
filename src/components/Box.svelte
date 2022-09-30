@@ -51,7 +51,7 @@
     }
   }
   .masonry-brick {
-    height: 210px;
+    height: 225px;
     width: 290px;
   }
 </style>

@@ -13,12 +13,15 @@
   let promise = [];
   let promise2 = [];
   let closeOrderModal = false;
+  let showUserListModal = false;
+  let userListData = [];
   let createDeposit = false;
   let showTimesheetsModal = false;
   let timesheetData = [];
   let showTimeSheetModal = false;
   let showAdminTimeSheetModal = false;
   let showOtherTimesheetsModal = false;
+  let showDepositModal = false;
   let showModalTimesheetsUser = "";
   let showModalDetails = false;
   let pin;
@@ -31,12 +34,13 @@
   function closeOrder(crmid) {
     closeSalesOrder(crmid).then((res) => {
       var bootboxalert = bootbox.alert({
-        message: res.error,
+        message: $_("backend." + res.error),
         size: "small",
       });
       setTimeout(function () {
         bootboxalert.modal("hide");
       }, backend.popupAutocloseTime);
+      showModalDetails = false;
     });
     closeOrderModal = false;
   }
@@ -48,6 +52,31 @@
     orders = setInterval(fetchData, 60000);
     fetchData();
     fetchData2();
+  }
+
+  async function startWork(data, mode, salesorder_id) {
+    showUserListModal = data;
+    showModalDetails = false;
+
+    let element = {
+      mode: mode,
+      salesorder_id: salesorder_id,
+    };
+
+    const response = await fetch(
+      baseURL +
+        "modules/SDK/src/modules/Webservices/backend.php?action=getEmployeeList",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(element),
+      }
+    );
+    let res = await response.json();
+
+    userListData = res;
   }
 
   async function closeSalesOrder(crmid) {
@@ -68,11 +97,9 @@
     return response.json();
   }
 
-  async function closeOtherTimesheet(crmid, cardId, isAdmin) {
+  async function closeOtherTimesheet(crmid) {
     let data = {
       crmid: crmid,
-      cardId: cardId,
-      isAdmin: isAdmin,
     };
 
     const response = await fetch(
@@ -118,33 +145,69 @@
     return response.json();
   }
 
-  function openDepositModal(crmid, veicoliid, accountid) {
+  function openDepositModal(data) {
     showModalDetails = false;
     pin = "";
-    createDeposit = {
-      crmid: crmid,
-      veicoliid: veicoliid,
-      accountid: accountid,
-    };
+    createDeposit = data;
   }
 
-  function promptCardShowTimesheets(data, pin, admin) {
-    checkEmployeeCard(pin, admin).then((res) => {
-      if (res.status == "success") {
-        showTimesheetsModal = false;
-        if (res.employee_id == null) {
-          showModalTimesheetsUser = "none";
-          showTimeSheetModal = true;
-          timesheetData = [];
-        } else {
-          showModalTimesheetsUser = res.employee_id;
-          showTimeSheetModal = true;
-          timesheetData = data;
-        }
-        isAdmin = false;
-        showModalDetails = false;
+  async function showDeposit(data) {
+    const response = await fetch(
+      baseURL +
+        "modules/SDK/src/modules/Webservices/backend.php?action=showDeposit",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
       }
+    );
+    let res = await response.json();
+    showDepositModal = data;
+    showModalDetails = false;
+  }
+
+  async function saveDeposit(crmid) {
+    let data = {
+      id: crmid,
+      cf_8pb_1314: 1,
+      cf_8pb_1305: document.getElementById("cf_8pb_1305").value,
+      cf_8pb_1306: document.getElementById("cf_8pb_1306").value,
+      cf_8pb_1307: document.getElementById("cf_8pb_1307").value,
+      cf_8pb_1308: document.getElementById("cf_8pb_1308").value,
+      cf_8pb_1309: document.getElementById("cf_8pb_1309").value,
+      cf_8pb_1310: document.getElementById("cf_8pb_1310").value,
+      cf_xpr_1684: document.getElementById("cf_xpr_1684").value,
+      cf_8pb_1313: document.getElementById("cf_8pb_1313").value,
+      cf_wym_1645: document.getElementById("cf_wym_1645").value,
+    };
+
+    const response = await fetch(
+      baseURL +
+        "modules/SDK/src/modules/Webservices/backend.php?action=saveDeposit",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }
+    );
+    let res = await response.json();
+
+    delete res.message.assigned_user_id;
+    showDepositModal = { ...showDepositModal, ...res.data };
+
+    var bootboxalert = bootbox.alert({
+      message: $_(res.message),
+      size: "small",
     });
+    setTimeout(function () {
+      bootboxalert.modal("hide");
+    }, backend.popupAutocloseTime);
+    showModalDetails = showDepositModal;
+    showDepositModal = false;
   }
 
   async function closeTimesheetAsAdmin(crmid) {
@@ -175,60 +238,40 @@
     }, backend.popupAutocloseTime);
   }
 
-  async function updateInventoryRow(
-    dataValues,
-    authentication,
-    admin,
-    autocloseproject
-  ) {
-    if (admin) {
-      checkEmployeeCard(pin, admin).then((res) => {
-        if (res.status == "success") {
-          showTimesheetsModal = false;
-          if (res.employee_id == null) {
-            updateInventoryModal = false;
-          } else {
-            updateInventoryModal = false;
-            isAdmin = false;
-            showModalTimesheetsUser = dataValues[1];
-            showAdminTimeSheetModal = true;
-            timesheetData = dataValues[2];
-          }
-          showModalDetails = false;
-        }
-      });
-    } else {
-      let data = {
-        authentication: authentication,
-        crmid: dataValues[0],
-        lineItemId: dataValues[1],
-        isAdmin: admin,
-        autoClose: autocloseproject,
-      };
+  async function updateInventoryRow(crmid, salesorder_no) {
+    let employees = [...document.getElementsByName("employees")];
+    employees.forEach(async (child) => {
+      if (child.checked) {
+        let data = {
+          crmid: crmid,
+          salesorder_no: salesorder_no,
+          userid: child.value,
+        };
 
-      const response = await fetch(
-        baseURL +
-          "modules/SDK/src/modules/Webservices/backend.php?action=updateInventoryRow",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        }
-      );
-      resetIntervals();
-      updateInventoryModal = false;
-      let res = await response.json();
-      pin = "";
-      var bootboxalert = bootbox.alert({
-        message: $_(res),
-        size: "small",
-      });
-      setTimeout(function () {
-        bootboxalert.modal("hide");
-      }, backend.popupAutocloseTime);
-    }
+        const response = await fetch(
+          baseURL +
+            "modules/SDK/src/modules/Webservices/backend.php?action=updateInventoryRow",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          }
+        );
+        resetIntervals();
+        showUserListModal = false;
+        let res = await response.json();
+        pin = "";
+        var bootboxalert = bootbox.alert({
+          message: $_("backend." + res),
+          size: "small",
+        });
+        setTimeout(function () {
+          bootboxalert.modal("hide");
+        }, backend.popupAutocloseTime);
+      }
+    });
   }
 
   async function fetchData() {
@@ -475,7 +518,7 @@
                 >
                   <div class="card-text" style="line-height:1;">
                     <div
-                      class="row mb-2"
+                      class="mb-2"
                       style="background:rgb(255 255 255 / 85%);"
                     >
                       <div class="col pr-0 pl-0 mb-2 mt-1">
@@ -484,7 +527,7 @@
                             {getTotalWorkTime(data.timesheets)}{seconds}s
                           </h6>
                           <div
-                            class="text-right mt-2 mr-3"
+                            class="text-right"
                             style="float:right;position:absolute;top:0;right:0;"
                           >
                             {#if settings.showcloseorder == 1}
@@ -505,7 +548,7 @@
                         {/if}
                         <p
                           style="font-size:20px;"
-                          class="card-text text-dark text-nowrap"
+                          class="card-text text-dark text-nowrap mb-0"
                         >
                           {data.salesorder_no}
                         </p>
@@ -520,31 +563,38 @@
                     </div>
                     <div
                       class="list-group mb-3"
-                      style="height:120px;overflow-y:auto;"
+                      style="max-height:7.5rem;overflow-y:auto;"
                     >
                       {#each data.timesheets as timesheet, key}
                         {#if timesheet.timesheet_status == "In Progress"}
                           <div
-                            class="list-group-item list-group-item-action pl-3 pt-2"
-                            style="height:40px;background:rgb(255 255 255 / 85%);"
+                            class="list-group-item list-group-item-action pl-2 pt-1 pr-2 pb-0"
+                            style="min-height:40px;background:rgb(255 255 255 / 85%);"
                           >
-                            <small
-                              ><i
-                                class="fas fa-user"
-                              />&nbsp;{timesheet.employeename}
-                              <p
-                                class="pt-1"
-                                style="float:right;color:red;font-weight:500;"
-                              >
-                                {getWorkTime(
-                                  timesheet.timesheet_date +
-                                    " " +
-                                    new Date(timesheet.start_time * 1000)
-                                      .toISOString()
-                                      .substr(11, 8)
-                                )}
-                              </p>
-                            </small>
+                            <div style="float:left;">
+                              <small><i class="fas fa-user" /> </small>
+                            </div>
+                            <div
+                              style="width:65%;float:left;margin-left:0.25rem;"
+                            >
+                              <small>{timesheet.employeename} </small>
+                            </div>
+                            <div style="text-align: right;">
+                              <small>
+                                <p
+                                  class="pt-1"
+                                  style="color:red;font-weight:500;"
+                                >
+                                  {getWorkTime(
+                                    timesheet.timesheet_date +
+                                      " " +
+                                      new Date(timesheet.start_time * 1000)
+                                        .toISOString()
+                                        .substr(11, 8)
+                                  )}
+                                </p>
+                              </small>
+                            </div>
                           </div>
                         {/if}
                       {/each}
@@ -651,8 +701,7 @@
             <div
               class="list-group-item list-group-item-action"
               on:click|preventDefault={() => {
-                pin = "";
-                showOtherTimesheetsModal = data.id;
+                closeOtherTimesheet(data.id);
               }}
             >
               <div class="row">
@@ -681,10 +730,337 @@
     {/await}
   </div>
 
+  {#if showUserListModal != false}
+    <ModalDetails on:close={() => (showUserListModal = false)}>
+      <h2 slot="header" style="text-align:center;">Seleziona Collaboratori</h2>
+      {#each userListData as users, key}
+        <p
+          style="margin-bottom:0px;font-size:24px;{users.status
+            ? 'color:#ccc'
+            : ''}"
+        >
+          <input
+            type="checkbox"
+            id="employees{key}"
+            name="employees"
+            disabled={users.status}
+            value={users.id}
+          /><label for="employees{key}"
+            >&nbsp;{users.firstname}&nbsp;{users.lastname}</label
+          >
+        </p>
+      {/each}
+      <div slot="footer" class="d-flex justify-content-between mb-1">
+        <a
+          href="."
+          class="btn btn-danger"
+          on:click|preventDefault|stopPropagation={() => {
+            showModalDetails = showUserListModal;
+            showUserListModal = false;
+          }}
+          >{$_("deposit.LBL_BTN_CANCEL")}&nbsp;<i
+            class="fas fa-arrow-left"
+          /></a
+        >
+        <a
+          href="."
+          class="btn btn-success"
+          on:click|preventDefault|stopPropagation={() => {
+            updateInventoryRow(
+              showUserListModal.id,
+              showUserListModal.salesorder_no
+            );
+          }}>{$_("deposit.LBL_BTN_SAVE")}&nbsp;<i class="fas fa-check" /></a
+        >
+      </div>
+    </ModalDetails>
+  {/if}
+
   {#if closeOrderModal != false}
     <Modal on:close={() => (closeOrderModal = false)}>
       <Keypad bind:value={pin} on:submit={closeOrder} />
     </Modal>
+  {/if}
+  {#if showDepositModal != false}
+    <ModalDetails on:close={() => (showDepositModal = false)}>
+      <h2 slot="header" style="text-align:center;">
+        {$_("home.LBL_BTN_SHOW_DEPOSIT")}
+      </h2>
+      <div class="row">
+        <div class="col">
+          <div class="d-flex justify-content-between mb-1">
+            {$_("deposit.LBL_QUANTITY")}
+            <input
+              type="text"
+              id="cf_8pb_1305"
+              style="width:50%;"
+              value={showDepositModal.cf_8pb_1305}
+            />
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            {$_("deposit.LBL_FRONT_CONSUMPTION")}
+            <select
+              id="cf_8pb_1307"
+              required
+              style="width:50%;"
+              value={showDepositModal.cf_8pb_1307}
+            >
+              <option value="" selected="">--Prego Selezionare--</option>
+              <option value="0">0</option>
+              <option value="5 Necessaria Sostituzione Immediata!"
+                >5 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="10 Necessaria Sostituzione Immediata!"
+                >10 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="15 Necessaria Sostituzione Immediata!"
+                >15 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="20 Necessaria Sostituzione Immediata!"
+                >20 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="25 Necessaria Sostituzione Immediata!"
+                >25 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="30 Necessaria Sostituzione Immediata!"
+                >30 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="35 Necessaria Sostituzione a Breve!"
+                >35 Necessaria Sostituzione a Breve!</option
+              >
+              <option value="40 Necessaria Sostituzione a Breve!"
+                >40 Necessaria Sostituzione a Breve!</option
+              >
+              <option value="45 Necessaria Sostituzione a Breve!"
+                >45 Necessaria Sostituzione a Breve!</option
+              >
+              <option value="50 Usura Media">50 Usura Media</option>
+              <option value="55 Usura Media">55 Usura Media</option>
+              <option value="60 Usura Media">60 Usura Media</option>
+              <option value="65 Condizioni Discrete"
+                >65 Condizioni Discrete</option
+              >
+              <option value="70 Condizioni Discrete"
+                >70 Condizioni Discrete</option
+              >
+              <option value="75 Condizioni Buone">75 Condizioni Buone</option>
+              <option value="80 Condizioni Buone">80 Condizioni Buone</option>
+              <option value="85 Condizioni Buone">85 Condizioni Buone</option>
+              <option value="90 Condizioni Ottime">90 Condizioni Ottime</option>
+              <option value="95 Condizioni Ottime">95 Condizioni Ottime</option>
+              <option value="99 Condizioni Ottime">99 Condizioni Ottime</option>
+            </select>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            {$_("deposit.LBL_PRODUCT")}
+            <div>
+              <input
+                type="text"
+                id="cf_8pb_1309"
+                style="width:50%;"
+                value={showDepositModal.cf_8pb_1309}
+              />&nbsp;<i class="fas fa-list" />
+            </div>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            {$_("deposit.LBL_SECTOR")}
+            <select
+              id="cf_xpr_1684"
+              name="cf_xpr_1684"
+              tabindex=""
+              style="width:50%;"
+              value={showDepositModal.cf_xpr_1684}
+            >
+              <option value="" selected="" />
+              <option value="1 A">1 A</option>
+              <option value="2 A">2 A</option>
+              <option value="3 A">3 A</option>
+              <option value="4 A">4 A</option>
+              <option value="5 A">5 A</option>
+              <option value="6 A">6 A</option>
+              <option value="7 A">7 A</option>
+              <option value="8 A">8 A</option>
+              <option value="9 A">9 A</option>
+              <option value="10 A">10 A</option>
+              <option value="11 A">11 A</option>
+              <option value="12 A">12 A</option>
+              <option value="13 A">13 A</option>
+              <option value="14 A">14 A</option>
+              <option value="15 A">15 A</option>
+              <option value="16 A">16 A</option>
+              <option value="17 A">17 A</option>
+              <option value="18 A">18 A</option>
+              <option value="19 A">19 A</option>
+              <option value="1 B">1 B</option>
+              <option value="2 B">2 B</option>
+              <option value="3 B">3 B</option>
+              <option value="4 B">4 B</option>
+              <option value="5 B">5 B</option>
+              <option value="6 B">6 B</option>
+              <option value="7 B">7 B</option>
+              <option value="8 B">8 B</option>
+              <option value="9 B">9 B</option>
+              <option value="10 B">10 B</option>
+              <option value="11 B">11 B</option>
+              <option value="12 B">12 B</option>
+              <option value="13 B">13 B</option>
+              <option value="14 B">14 B</option>
+              <option value="15 B">15 B</option>
+              <option value="16 B">16 B</option>
+              <option value="17 B">17 B</option>
+              <option value="18 B">18 B</option>
+              <option value="19 B">19 B</option>
+              <option value="M 2">M 2</option>
+              <option value="M 3">M 3</option>
+              <option value="M 3 A">M 3 A</option>
+              <option value="M 5">M 5</option>
+              <option value="M 6">M 6</option>
+              <option value="M 7">M 7</option>
+              <option value="M 8">M 8</option>
+              <option value="M 9">M 9</option>
+              <option value="M 10">M 10</option>
+              <option value="M 11">M 11</option>
+              <option value="M 13">M 13</option>
+              <option value="M 16">M 16</option>
+              <option value="M 17">M 17</option>
+              <option value="M 18">M 18</option>
+              <option value="M 19">M 19</option>
+              <option value="M 20">M 20</option>
+              <option value="M 21">M 21</option>
+              <option value="M 22">M 22</option>
+              <option value="M 23">M 23</option>
+              <option value="M 24">M 24</option>
+              <option value="M 24 25">M 24 25</option>
+              <option value="M 25">M 25</option>
+              <option value="M 26">M 26</option>
+              <option value="M 27">M 27</option>
+              <option value="TUNNEL">TUNNEL</option>
+            </select>
+          </div>
+        </div>
+        <div class="col">
+          <div class="d-flex justify-content-between mb-1">
+            {$_("deposit.LBL_CAR_RIMS")}
+            <select
+              id="cf_8pb_1306"
+              required
+              style="width:50%;"
+              value={showDepositModal.cf_8pb_1306}
+            >
+              <option value="">--Prego Selezionare--</option>
+              <option value="Si">Si</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            {$_("deposit.LBL_REAR_CONSUMPTION")}
+            <select
+              id="cf_8pb_1308"
+              required
+              style="width:50%;"
+              value={showDepositModal.cf_8pb_1308}
+            >
+              <option value="" selected="">--Prego Selezionare--</option>
+              <option value="0">0</option>
+              <option value="5 Necessaria Sostituzione Immediata!"
+                >5 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="10 Necessaria Sostituzione Immediata!"
+                >10 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="15 Necessaria Sostituzione Immediata!"
+                >15 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="20 Necessaria Sostituzione Immediata!"
+                >20 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="25 Necessaria Sostituzione Immediata!"
+                >25 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="30 Necessaria Sostituzione Immediata!"
+                >30 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="35 Necessaria Sostituzione a Breve!"
+                >35 Necessaria Sostituzione a Breve!</option
+              >
+              <option value="40 Necessaria Sostituzione a Breve!"
+                >40 Necessaria Sostituzione a Breve!</option
+              >
+              <option value="45 Necessaria Sostituzione a Breve!"
+                >45 Necessaria Sostituzione a Breve!</option
+              >
+              <option value="50 Usura Media">50 Usura Media</option>
+              <option value="55 Usura Media">55 Usura Media</option>
+              <option value="60 Usura Media">60 Usura Media</option>
+              <option value="65 Condizioni Discrete"
+                >65 Condizioni Discrete</option
+              >
+              <option value="70 Condizioni Discrete"
+                >70 Condizioni Discrete</option
+              >
+              <option value="75 Condizioni Buone">75 Condizioni Buone</option>
+              <option value="80 Condizioni Buone">80 Condizioni Buone</option>
+              <option value="85 Condizioni Buone">85 Condizioni Buone</option>
+              <option value="90 Condizioni Ottime">90 Condizioni Ottime</option>
+              <option value="95 Condizioni Ottime">95 Condizioni Ottime</option>
+              <option value="99 Condizioni Ottime">99 Condizioni Ottime</option>
+            </select>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            {$_("deposit.LBL_MANUAL_PRODUCT")}
+            <input
+              type="text"
+              id="cf_8pb_1310"
+              style="width:50%;"
+              value={showDepositModal.cf_8pb_1310}
+            />
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            {$_("deposit.LBL_SEASON")}
+            <select
+              id="cf_8pb_1313"
+              required
+              style="width:50%;"
+              value={showDepositModal.cf_8pb_1313}
+            >
+              <option value="">--Prego Selezionare--</option>
+              <option value="IN">IN</option>
+              <option value="ES">ES</option>
+              <option value="4S">4S</option>
+            </select>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            {$_("deposit.LBL_DIFFERENT_AXIS_MEASURE")}
+            <input
+              type="text"
+              id="cf_wym_1645"
+              style="width:50%;"
+              value={showDepositModal.cf_wym_1645}
+            />
+          </div>
+        </div>
+      </div>
+      <div slot="footer" class="d-flex justify-content-between mb-1">
+        <a
+          href="."
+          class="btn btn-danger"
+          on:click|preventDefault|stopPropagation={() => {
+            showModalDetails = showDepositModal;
+            showDepositModal = false;
+          }}
+          >{$_("deposit.LBL_BTN_CANCEL")}&nbsp;<i
+            class="fas fa-arrow-left"
+          /></a
+        >
+        <a
+          href="."
+          class="btn btn-success"
+          on:click|preventDefault|stopPropagation={() => {
+            saveDeposit(showDepositModal.id);
+          }}>{$_("deposit.LBL_BTN_SAVE")}&nbsp;<i class="fas fa-check" /></a
+        >
+      </div>
+    </ModalDetails>
   {/if}
 
   {#if createDeposit != false}
@@ -695,70 +1071,282 @@
       <div class="row">
         <div class="col">
           <div class="d-flex justify-content-between mb-1">
-            Nome Deposito: <input type="text" />
-            <input
-              type="hidden"
-              name="vcf_4_2"
-              value={createDeposit.veicoliid}
-            />
-            <input
-              type="hidden"
-              name="vcf_4_4"
-              value={createDeposit.accountid}
-            />
+            {$_("deposit.LBL_QUANTITY")}
+            <input type="text" id="cf_8pb_1305" style="width:50%;" />
           </div>
           <div class="d-flex justify-content-between mb-1">
-            Quantità: <input type="text" name="vcf_4_13" />
+            {$_("deposit.LBL_FRONT_CONSUMPTION")}
+            <select id="cf_8pb_1307" required style="width:50%;">
+              <option value="" selected="">--Prego Selezionare--</option>
+              <option value="0">0</option>
+              <option value="5 Necessaria Sostituzione Immediata!"
+                >5 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="10 Necessaria Sostituzione Immediata!"
+                >10 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="15 Necessaria Sostituzione Immediata!"
+                >15 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="20 Necessaria Sostituzione Immediata!"
+                >20 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="25 Necessaria Sostituzione Immediata!"
+                >25 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="30 Necessaria Sostituzione Immediata!"
+                >30 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="35 Necessaria Sostituzione a Breve!"
+                >35 Necessaria Sostituzione a Breve!</option
+              >
+              <option value="40 Necessaria Sostituzione a Breve!"
+                >40 Necessaria Sostituzione a Breve!</option
+              >
+              <option value="45 Necessaria Sostituzione a Breve!"
+                >45 Necessaria Sostituzione a Breve!</option
+              >
+              <option value="50 Usura Media">50 Usura Media</option>
+              <option value="55 Usura Media">55 Usura Media</option>
+              <option value="60 Usura Media">60 Usura Media</option>
+              <option value="65 Condizioni Discrete"
+                >65 Condizioni Discrete</option
+              >
+              <option value="70 Condizioni Discrete"
+                >70 Condizioni Discrete</option
+              >
+              <option value="75 Condizioni Buone">75 Condizioni Buone</option>
+              <option value="80 Condizioni Buone">80 Condizioni Buone</option>
+              <option value="85 Condizioni Buone">85 Condizioni Buone</option>
+              <option value="90 Condizioni Ottime">90 Condizioni Ottime</option>
+              <option value="95 Condizioni Ottime">95 Condizioni Ottime</option>
+              <option value="99 Condizioni Ottime">99 Condizioni Ottime</option>
+            </select>
           </div>
           <div class="d-flex justify-content-between mb-1">
-            Prodotto Manuale: <input type="text" name="vcf_4_7" />
+            {$_("deposit.LBL_PRODUCT")}
+            <div>
+              <input type="text" id="cf_8pb_1309" style="width:50%;" />&nbsp;<i
+                class="fas fa-list"
+              />
+            </div>
           </div>
           <div class="d-flex justify-content-between mb-1">
-            Cerchi: <input type="text" name="vcf_4_22" />
-          </div>
-          <div class="d-flex justify-content-between mb-1">
-            % di Consumo Posteriore: <input type="text" name="vcf_4_11" />
+            {$_("deposit.LBL_SECTOR")}
+            <select
+              id="cf_xpr_1684"
+              name="cf_xpr_1684"
+              tabindex=""
+              style="width:50%;"
+            >
+              <option value="" selected="" />
+              <option value="1 A">1 A</option>
+              <option value="2 A">2 A</option>
+              <option value="3 A">3 A</option>
+              <option value="4 A">4 A</option>
+              <option value="5 A">5 A</option>
+              <option value="6 A">6 A</option>
+              <option value="7 A">7 A</option>
+              <option value="8 A">8 A</option>
+              <option value="9 A">9 A</option>
+              <option value="10 A">10 A</option>
+              <option value="11 A">11 A</option>
+              <option value="12 A">12 A</option>
+              <option value="13 A">13 A</option>
+              <option value="14 A">14 A</option>
+              <option value="15 A">15 A</option>
+              <option value="16 A">16 A</option>
+              <option value="17 A">17 A</option>
+              <option value="18 A">18 A</option>
+              <option value="19 A">19 A</option>
+              <option value="1 B">1 B</option>
+              <option value="2 B">2 B</option>
+              <option value="3 B">3 B</option>
+              <option value="4 B">4 B</option>
+              <option value="5 B">5 B</option>
+              <option value="6 B">6 B</option>
+              <option value="7 B">7 B</option>
+              <option value="8 B">8 B</option>
+              <option value="9 B">9 B</option>
+              <option value="10 B">10 B</option>
+              <option value="11 B">11 B</option>
+              <option value="12 B">12 B</option>
+              <option value="13 B">13 B</option>
+              <option value="14 B">14 B</option>
+              <option value="15 B">15 B</option>
+              <option value="16 B">16 B</option>
+              <option value="17 B">17 B</option>
+              <option value="18 B">18 B</option>
+              <option value="19 B">19 B</option>
+              <option value="M 2">M 2</option>
+              <option value="M 3">M 3</option>
+              <option value="M 3 A">M 3 A</option>
+              <option value="M 5">M 5</option>
+              <option value="M 6">M 6</option>
+              <option value="M 7">M 7</option>
+              <option value="M 8">M 8</option>
+              <option value="M 9">M 9</option>
+              <option value="M 10">M 10</option>
+              <option value="M 11">M 11</option>
+              <option value="M 13">M 13</option>
+              <option value="M 16">M 16</option>
+              <option value="M 17">M 17</option>
+              <option value="M 18">M 18</option>
+              <option value="M 19">M 19</option>
+              <option value="M 20">M 20</option>
+              <option value="M 21">M 21</option>
+              <option value="M 22">M 22</option>
+              <option value="M 23">M 23</option>
+              <option value="M 24">M 24</option>
+              <option value="M 24 25">M 24 25</option>
+              <option value="M 25">M 25</option>
+              <option value="M 26">M 26</option>
+              <option value="M 27">M 27</option>
+              <option value="TUNNEL">TUNNEL</option>
+            </select>
           </div>
         </div>
         <div class="col">
           <div class="d-flex justify-content-between mb-1">
-            Stato: <input type="text" name="vcf_4_5" />
+            {$_("deposit.LBL_CAR_RIMS")}
+            <select id="cf_8pb_1306" required style="width:50%;">
+              <option value="">--Prego Selezionare--</option>
+              <option value="Si">Si</option>
+              <option value="No">No</option>
+            </select>
           </div>
           <div class="d-flex justify-content-between mb-1">
-            Prodotto: <input type="text" name="vcf_4_6" />
+            {$_("deposit.LBL_REAR_CONSUMPTION")}
+            <select id="cf_8pb_1308" required style="width:50%;">
+              <option value="" selected="">--Prego Selezionare--</option>
+              <option value="0">0</option>
+              <option value="5 Necessaria Sostituzione Immediata!"
+                >5 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="10 Necessaria Sostituzione Immediata!"
+                >10 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="15 Necessaria Sostituzione Immediata!"
+                >15 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="20 Necessaria Sostituzione Immediata!"
+                >20 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="25 Necessaria Sostituzione Immediata!"
+                >25 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="30 Necessaria Sostituzione Immediata!"
+                >30 Necessaria Sostituzione Immediata!</option
+              >
+              <option value="35 Necessaria Sostituzione a Breve!"
+                >35 Necessaria Sostituzione a Breve!</option
+              >
+              <option value="40 Necessaria Sostituzione a Breve!"
+                >40 Necessaria Sostituzione a Breve!</option
+              >
+              <option value="45 Necessaria Sostituzione a Breve!"
+                >45 Necessaria Sostituzione a Breve!</option
+              >
+              <option value="50 Usura Media">50 Usura Media</option>
+              <option value="55 Usura Media">55 Usura Media</option>
+              <option value="60 Usura Media">60 Usura Media</option>
+              <option value="65 Condizioni Discrete"
+                >65 Condizioni Discrete</option
+              >
+              <option value="70 Condizioni Discrete"
+                >70 Condizioni Discrete</option
+              >
+              <option value="75 Condizioni Buone">75 Condizioni Buone</option>
+              <option value="80 Condizioni Buone">80 Condizioni Buone</option>
+              <option value="85 Condizioni Buone">85 Condizioni Buone</option>
+              <option value="90 Condizioni Ottime">90 Condizioni Ottime</option>
+              <option value="95 Condizioni Ottime">95 Condizioni Ottime</option>
+              <option value="99 Condizioni Ottime">99 Condizioni Ottime</option>
+            </select>
           </div>
           <div class="d-flex justify-content-between mb-1">
-            Stagione: <input type="text" name="vcf_4_8" />
+            {$_("deposit.LBL_MANUAL_PRODUCT")}
+            <input type="text" id="cf_8pb_1310" style="width:50%;" />
           </div>
           <div class="d-flex justify-content-between mb-1">
-            % di Consumo Anteriore: <input type="text" name="vcf_4_10" />
+            {$_("deposit.LBL_SEASON")}
+            <select id="cf_8pb_1313" required style="width:50%;">
+              <option value="">--Prego Selezionare--</option>
+              <option value="IN">IN</option>
+              <option value="ES">ES</option>
+              <option value="4S">4S</option>
+            </select>
           </div>
           <div class="d-flex justify-content-between mb-1">
-            Data del Deposito: <input type="text" name="vcf_4_14" />
+            {$_("deposit.LBL_DIFFERENT_AXIS_MEASURE")}
+            <input type="text" id="cf_wym_1645" style="width:50%;" />
           </div>
         </div>
       </div>
-      <div slot="footer" style="text-align:right;">
+      <div slot="footer" class="d-flex justify-content-between mb-1">
+        <a
+          href="."
+          class="btn btn-danger"
+          on:click|preventDefault|stopPropagation={() => {
+            showModalDetails = createDeposit;
+            createDeposit = false;
+          }}
+          >{$_("deposit.LBL_BTN_CANCEL")}&nbsp;<i
+            class="fas fa-arrow-left"
+          /></a
+        >
         <a
           href="."
           class="btn btn-success"
           on:click|preventDefault|stopPropagation={() => {
-            closeTimesheetAsAdmin(data.id);
-          }}>{$_("home.LBL_BTN_CLOSE")}<i class="fas fa-check" /></a
+            saveDeposit(createDeposit.id);
+          }}>{$_("deposit.LBL_BTN_SAVE")}&nbsp;<i class="fas fa-check" /></a
         >
       </div>
     </ModalDetails>
   {/if}
 
   {#if showTimesheetsModal != false}
-    <Modal on:close={() => (showTimesheetsModal = false)}>
-      <Keypad
-        adminCheck="true"
-        bind:value={pin}
-        bind:isAdmin
-        on:submit={promptCardShowTimesheets(showTimesheetsModal, pin, isAdmin)}
-      />
-    </Modal>
+    <ModalDetails on:close={() => (showTimesheetsModal = false)}>
+      <h2 slot="header" style="text-align:center;">Seleziona Collaboratori</h2>
+      {#each userListData as users}
+        <p
+          style="margin-bottom:0px;font-size:24px;{users.status
+            ? 'color:#ccc'
+            : ''}"
+        >
+          <input
+            type="checkbox"
+            name="employees"
+            disabled={users.status}
+            value={users.id}
+          />&nbsp;{users.firstname}&nbsp;{users.lastname}
+        </p>
+      {/each}
+      <div slot="footer" class="d-flex justify-content-between mb-1">
+        <a
+          href="."
+          class="btn btn-danger"
+          on:click|preventDefault|stopPropagation={() => {
+            showModalDetails = showTimesheetsModal;
+            showTimesheetsModal = false;
+          }}
+          >{$_("deposit.LBL_BTN_CANCEL")}&nbsp;<i
+            class="fas fa-arrow-left"
+          /></a
+        >
+        <a
+          href="."
+          class="btn btn-success"
+          on:click|preventDefault|stopPropagation={() => {
+            updateInventoryRow(
+              showUserListModal.id,
+              showUserListModal.salesorder_no
+            );
+          }}>{$_("deposit.LBL_BTN_SAVE")}&nbsp;<i class="fas fa-check" /></a
+        >
+      </div>
+    </ModalDetails>
   {/if}
 
   {#if showOtherTimesheetsModal != false}
@@ -909,7 +1497,7 @@
                 class="btn btn-warning"
                 style="border-top-right-radius: 0;border-bottom-right-radius:0;"
                 on:click|preventDefault={() =>
-                  console.log(showModalDetails.id)}
+                  startWork(showModalDetails, "stop", showModalDetails.id)}
                 >{$_("home.LBL_BTN_STOP_WORK")}</a
               >
               <a
@@ -917,7 +1505,7 @@
                 style="border-top-left-radius: 0;border-bottom-left-radius: 0;"
                 class="btn btn-success"
                 on:click|preventDefault={() =>
-                  console.log(showModalDetails.id)}
+                  startWork(showModalDetails, "start", showModalDetails.id)}
                 ><i class="fas fa-plus" /></a
               >
             {:else}
@@ -925,7 +1513,7 @@
                 href="."
                 class="btn btn-success"
                 on:click|preventDefault={() =>
-                  console.log(showModalDetails.id)}
+                  startWork(showModalDetails, "start", showModalDetails.id)}
                 >{$_("home.LBL_BTN_START_WORK")}</a
               >
             {/if}
@@ -970,8 +1558,10 @@
             <b>{$_("home.contact")}:</b>
             {showModalDetails.contact_name}
           {/if}
+          <b>{$_("home.assigned_to")}:</b>
+          {showModalDetails.assigned_user_id}<br />
         </div>
-        <div class="col-4">
+        <div class="col-5">
           <b>{$_("home.plate")}:</b>
           {showModalDetails.plate} <br />
           <b>{$_("home.vehicle")}:</b>
@@ -980,6 +1570,16 @@
           {showModalDetails.chassis}<br />
           <b>{$_("home.kilometers")}:</b>
           {showModalDetails.cf_8pb_1203}<br />
+          <b>{$_("home.deposit_withdrawn")}:</b>
+          {showModalDetails.depositData}<br />
+        </div>
+        <div class="col-1" style="text-align:right;">
+          <i
+            class="fas fa-pen text-success"
+            on:click={() => {
+              console.log("test");
+            }}
+          />
         </div>
       </div>
       <div class="row">
@@ -990,12 +1590,12 @@
         </div>
       </div>
       <div class="row">
-        <div class="col-12">
+        <div class="col-9">
           <div style="max-height: 600px;overflow-y: auto;">
             {#each showModalDetails.product_block.products as product, key}
               {#if product.raw.no_garage != 1}
                 <div class="list-group-item list-group-item-action">
-                  <div class="d-flex w-100">
+                  <div class="d-flex">
                     <div class="mr-2">
                       <i class="fal fa-clipboard-list-check" />
                     </div>
@@ -1003,9 +1603,22 @@
                       <h5>{product.qty}x</h5>
                     </div>
                     <div>
-                      <h5 class="mb-1">
-                        {product.productName}
-                      </h5>
+                      {#if product.entityType == "Products"}
+                        <h5 class="mb-0">
+                          {product.productName}
+                        </h5>
+                      {:else}
+                        <h5 class="mb-1">
+                          {product.productName}
+                        </h5>
+                      {/if}
+                      {#if product.entityType == "Products"}
+                        <p class="mb-1">
+                          <b
+                            >{$_("home.product_code")}: {product.hdnProductcode}</b
+                          >
+                        </p>
+                      {/if}
                       <p class="mb-1">{@html product.productDescription}</p>
                       {#if product.comment != ""}
                         <small
@@ -1015,30 +1628,38 @@
                         >
                       {/if}
                     </div>
-                    <div
-                      class="text-right"
-                      style="width:250px;max-height:72px;overflow-y: auto;"
-                    >
-                      {#each showModalDetails.timesheets as timesheet, key}
-                        {#if product.raw.work_in_progress == 1 && product.raw.timesheet_id == timesheet.salesorder_lineid && timesheet.timesheet_status == "In Progress"}
-                          <small>
-                            <span style="color:red;font-weight:500;">
-                              {getWorkTime(
-                                timesheet.timesheet_date +
-                                  " " +
-                                  new Date(timesheet.start_time * 1000)
-                                    .toISOString()
-                                    .substr(11, 8)
-                              )}
-                            </span>
-                            &nbsp;<i
-                              class="fas fa-user"
-                            />&nbsp;{timesheet.employeename}
-                          </small>
-                          <br />
-                        {/if}
-                      {/each}
-                    </div>
+                  </div>
+                </div>
+              {/if}
+            {/each}
+          </div>
+        </div>
+        <div class="col-3 pl-0" style="height:100%;">
+          <div class="list-group mb-3" style="overflow-y:auto;">
+            {#each showModalDetails.timesheets as timesheet, key}
+              {#if timesheet.timesheet_status == "In Progress"}
+                <div
+                  class="list-group-item list-group-item-action pl-2 pt-1 pr-2 pb-0"
+                  style="min-height:40px;background:rgb(255 255 255 / 85%);"
+                >
+                  <div style="float:left;">
+                    <small><i class="fas fa-user" /> </small>
+                  </div>
+                  <div style="width:65%;float:left;margin-left:0.25rem;">
+                    <small>{timesheet.employeename} </small>
+                  </div>
+                  <div style="text-align: right;">
+                    <small>
+                      <p class="pt-1" style="color:red;font-weight:500;">
+                        {getWorkTime(
+                          timesheet.timesheet_date +
+                            " " +
+                            new Date(timesheet.start_time * 1000)
+                              .toISOString()
+                              .substr(11, 8)
+                        )}
+                      </p>
+                    </small>
                   </div>
                 </div>
               {/if}
@@ -1053,24 +1674,15 @@
               href="."
               class="btn btn-success"
               on:click|preventDefault|stopPropagation={() => {
-                openDepositModal(
-                  showModalDetails.id,
-                  showModalDetails.veicoliid,
-                  showModalDetails.account_id
-                );
-              }}>Visualizza Deposito&nbsp;</a
+                showDeposit(showModalDetails);
+              }}>{$_("home.LBL_BTN_SHOW_DEPOSIT")}&nbsp;</a
             >
           {:else}
             <a
               href="."
               class="btn btn-success"
               on:click|preventDefault|stopPropagation={() => {
-                console.log(showModalDetails.veicoliid);
-                openDepositModal(
-                  showModalDetails.id,
-                  showModalDetails.veicoliid,
-                  showModalDetails.account_id
-                );
+                openDepositModal(showModalDetails);
               }}
               >{$_("home.LBL_BTN_CREATE_DEPOSIT")}&nbsp;<i
                 class="fas fa-plus"

@@ -1,10 +1,10 @@
 {
-    "LBL_APP_TITLE": "Carrozzeria Demo",
+    "LBL_APP_TITLE": "Carrozzeria Viglezio",
     "languages": {
         "en": "English",
         "it": "Italian"
     },
-    "backend":{
+    "backend": {
         "LBL_REGISTRATION_DONE": "Registration Done",
         "LBL_NO_USER_CARD": "No user with this card",
         "LBL_FINISHED_WORKING": "Finished working",
@@ -15,10 +15,22 @@
         "LBL_ERROR": "An error as occurred",
         "LBL_OTHER_TIMESHEET_PROGRESS": "Other timesheet in progress for the current user",
         "LBL_NEW_TIMESHEET_CREATED": "New timesheet created",
-        "LBL_WRONG_USER":"Timesheet opened from another user",
+        "LBL_WRONG_USER": "Timesheet opened from another user",
         "LBL_LEAVING_ALREADY_REGISTERED": "Leaving already registered",
         "LBL_ENTRANCE_ALREADY_REGISTERED": "Entrance already registered"
-
+    },
+    "deposit": {
+        "LBL_QUANTITY": "Quantity",
+        "LBL_FRONT_CONSUMPTION": "% Front Consumption",
+        "LBL_REAR_CONSUMPTION": "% Back Consumption",
+        "LBL_PRODUCT": "Product",
+        "LBL_SECTOR": "Sector",
+        "LBL_CAR_RIMS": "Car Rims",
+        "LBL_MANUAL_PRODUCT": "Manual Product",
+        "LBL_SEASON": "Season",
+        "LBL_DIFFERENT_AXIS_MEASURE": "Different Axis Measure",
+        "LBL_BTN_CANCEL": "Cancel",
+        "LBL_BTN_SAVE": "Save"
     },
     "nav": {
         "home": "Home",
@@ -30,16 +42,17 @@
     },
     "login": {
         "LBL_LOGIN_TITLE": "Login",
-        "LBL_LOGIN_SUBTITLE":"Enter your personal PIN or scan your ID Card"
+        "LBL_LOGIN_SUBTITLE": "Enter your personal PIN or scan your ID Card"
     },
     "home": {
         "LBL_BTN_CLOSE": "Close",
         "LBL_BTN_CREATE_DEPOSIT": "Create Deposit",
+        "LBL_BTN_SHOW_DEPOSIT": "Show Deposit",
         "LBL_BTN_START_WORK": "Start Working",
         "LBL_BTN_STOP_WORK": "Stop Working",
         "LBL_MAIN_TITLE": "Vehicles in Processing",
         "LBL_OTHER_TITLE": "Other Ongoing Activities",
-        "LBL_LOADING":"Loading",
+        "LBL_LOADING": "Loading",
         "subject": "Subject",
         "order_no": "Order Number",
         "account": "Company",
@@ -49,7 +62,10 @@
         "chassis_no": "Chassis No.",
         "kilometers": "Kilometers",
         "description": "Description",
+        "assigned_to": "Assigned To",
+        "deposit_withdrawn":"Dep. Withdrawn",
         "courtesy_car": "Courtesy Car",
+        "product_code": "Product Code",
         "LBL_BTN_SHOW_TIMESHEETS": "Show Timesheets",
         "LBL_TIMESHEETS_LIST": "Processing List",
         "LBL_EMPTY_TIMESHEETS": "There are no processes",

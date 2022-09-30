@@ -1,16 +1,20 @@
 <script>
   import Keypad from "./Keypad.svelte";
   import Modal from "./Modal.svelte";
+  import ModalDetails from "./ModalDetails.svelte";
   import { goto } from "@sapper/app";
   import { onMount } from "svelte";
   import { backend } from "../config/config.backend";
-  import { _ } from 'svelte-i18n';
+  import { _ } from "svelte-i18n";
 
   let baseURL = backend.baseurl;
   let topbarcol;
   let topbartext;
   let currentUser;
   let modalData = [];
+  let userListData = [];
+  let showUserListModal = false;
+  let showOtherListModal = false;
   let showModal = false;
   let showModal2 = false;
   let showModal3 = false;
@@ -20,10 +24,41 @@
   let pin;
   let pin2;
 
-  async function getTodayEntryLines(authentication) {
-    let data = {
-      authentication: authentication,
+  async function userList(mode) {
+    let element = {
+      mode: mode,
+      salesorder_id: '15x0',
     };
+
+    const response = await fetch(
+      baseURL +
+        "modules/SDK/src/modules/Webservices/backend.php?action=getEmployeeList",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(element),
+      }
+    );
+    let res = await response.json();
+
+    userListData = res;
+  }
+
+  async function getTodayEntryLines() {
+    showUserListModal = false;
+
+    let data = {};
+    let employees = [...document.getElementsByName("employees")];
+    employees.forEach(async (child) => {
+      if (child.checked) {
+        data = {
+          userid: child.value,
+        };
+      }
+    });
+
     const res = await fetch(
       baseURL +
         "modules/SDK/src/modules/Webservices/backend.php?action=getTodayEntryLines",
@@ -67,7 +102,7 @@
 
     if (res.status == "success" && res.employee_id != "admin") {
       bootbox.alert({
-        message: "<p align='center'>" + $_('backend.LBL_WRONG_LOGIN') + "</p>",
+        message: "<p align='center'>" + $_("backend.LBL_WRONG_LOGIN") + "</p>",
         animate: true,
         size: "small",
         backdrop: true,
@@ -97,37 +132,42 @@
     otherActivities = json.data;
   }
 
-  async function createOtherTimesheet(pin, service) {
-    let data = {
-      cardId: pin,
-      service_id: service[0],
-      servicename: service[1],
-      isAdmin: true,
-    };
+  async function createOtherTimesheet(service) {
+    let employees = [...document.getElementsByName("employees")];
+    employees.forEach(async (child) => {
+      if (child.checked) {
 
-    const res = await fetch(
-      baseURL +
-        "modules/SDK/src/modules/Webservices/backend.php?action=createOtherTimesheet",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+        let data = {
+          userid: child.value,
+          service_id: service[0],
+          servicename: service[1],
+        };
+
+        const res = await fetch(
+          baseURL +
+            "modules/SDK/src/modules/Webservices/backend.php?action=createOtherTimesheet",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          }
+        );
+
+        const result = await res.json();
+        showOtherListModal = false;
+        showOtherPinPad = false;
+        localStorage.setItem("refresh", "true");
+        var bootboxalert = bootbox.alert({
+          message: $_("backend." + result.message),
+          size: "small",
+        });
+        setTimeout(function () {
+          bootboxalert.modal("hide");
+        }, backend.popupAutocloseTime);
       }
-    );
-
-    const result = await res.json();
-
-    showOtherPinPad = false;
-    localStorage.setItem("refresh", "true");
-    var bootboxalert = bootbox.alert({
-      message: $_('backend.' + result.message),
-      size: "small",
     });
-    setTimeout(function () {
-      bootboxalert.modal("hide");
-    }, backend.popupAutocloseTime);
   }
 
   onMount(async () => {
@@ -168,7 +208,7 @@
     let res = await response.json();
     localStorage.setItem("refresh", "true");
     var bootboxalert = bootbox.alert({
-      message: $_('backend.' + res.message),
+      message: $_("backend." + res.message),
       size: "small",
     });
     setTimeout(function () {
@@ -204,7 +244,8 @@
     <ul class="navbar-nav mr-auto">
       <li class="nav-item active">
         <a class="nav-link" href="garage/home" style="color:{topbartext};"
-          ><i class="fad fa-cars" /> {$_('nav.home')}
+          ><i class="fad fa-cars" />
+          {$_("nav.home")}
           <span class="sr-only">(current)</span></a
         >
       </li>
@@ -213,17 +254,18 @@
     <form class="form-inline my-2 my-lg-0 mr-auto">
       <a href="." on:click|preventDefault={() => fetchServices()}
         ><button class="btn btn-warning my-2 my-sm-0">
-          <i class="fad fa-folder-open" /> {$_('nav.LBL_BTN_OTHER_TIMESHEETS')}</button
+          <i class="fad fa-folder-open" />
+          {$_("nav.LBL_BTN_OTHER_TIMESHEETS")}</button
         ></a
       >&nbsp;
       <a
         href="."
         on:click|preventDefault={() => {
-          showModal4 = true;
-          pin2 = "";
+          userList("ALL");
+          showUserListModal = true;
         }}
         ><button class="btn btn-info my-2 my-sm-0">
-          <i class="fad fa-folder-open" /> {$_('nav.LBL_BTN_PRESENCES')}</button
+          <i class="fad fa-folder-open" /> {$_("nav.LBL_BTN_PRESENCES")}</button
         ></a
       >
     </form>
@@ -236,7 +278,7 @@
           pin2 = "";
         }}
         ><button class="btn btn-success my-2 my-sm-0">
-          <i class="fad fa-id-badge" /> {$_('nav.LBL_BTN_ENTRY')}</button
+          <i class="fad fa-id-badge" /> {$_("nav.LBL_BTN_ENTRY")}</button
         ></a
       >&nbsp;
       <a
@@ -246,7 +288,7 @@
           pin2 = "";
         }}
         ><button class="btn btn-danger my-2 my-sm-0">
-          <i class="fas fa-id-badge" /> {$_('nav.LBL_BTN_EXIT')}</button
+          <i class="fas fa-id-badge" /> {$_("nav.LBL_BTN_EXIT")}</button
         ></a
       >&nbsp;
     </form>
@@ -269,7 +311,9 @@
       <p />
     {:then result}
       {#if !result.data}
-        <p style="text-align:center;font-size:26px;">{$_('backend.' + result.error)}</p>
+        <p style="text-align:center;font-size:26px;">
+          {$_("backend." + result.error)}
+        </p>
       {:else}
         <div
           class="list-group mb-3 text-left"
@@ -288,7 +332,7 @@
                       <i class="fas fa-user" />&nbsp;{data.employee_id}&nbsp;
                     </h5>
                     <h6>
-                      {$_('nav.LBL_BTN_ENTRY')} - {new Date(line.hour * 1000)
+                      {$_("nav.LBL_BTN_ENTRY")} - {new Date(line.hour * 1000)
                         .toISOString()
                         .substr(11, 8)}
                     </h6>
@@ -305,7 +349,7 @@
                       <i class="fas fa-user" />&nbsp;{data.employee_id}&nbsp;
                     </h5>
                     <h6>
-                      {$_('nav.LBL_BTN_EXIT')} - {new Date(line.hour * 1000)
+                      {$_("nav.LBL_BTN_EXIT")} - {new Date(line.hour * 1000)
                         .toISOString()
                         .substr(11, 8)}
                     </h6>
@@ -332,16 +376,50 @@
         </div>
       {/if}
     {/await}
-    <div style="text-align:right;" slot="footer">
-    </div>
+    <div style="text-align:right;" slot="footer" />
   </Modal>
 {/if}
 
 {#if showModal3 != false}
-  <Modal on:close={() => (showModal3 = false)}>
-    <Keypad bind:value={pin2} on:submit={createEntryLine(showModal3, pin2)} />
-  </Modal>
+  <ModalDetails on:close={() => (showModal3 = false)}>
+    <h2 slot="header" style="text-align:center;">Seleziona Collaboratori</h2>
+    {#each userListData as users, key}
+      <p
+        style="margin-bottom:0px;font-size:24px;{users.status
+          ? 'color:#ccc'
+          : ''}"
+      >
+        <input
+          type="checkbox"
+          id="employees{key}"
+          name="employees"
+          disabled={users.status}
+          value={users.id}
+        /><label for="employees{key}"
+          >&nbsp;{users.firstname}&nbsp;{users.lastname}</label
+        >
+      </p>
+    {/each}
+    <div slot="footer" class="d-flex justify-content-between mb-1">
+      <a
+        href="."
+        class="btn btn-danger"
+        on:click|preventDefault|stopPropagation={() => {
+          showModal3 = false;
+        }}
+        >{$_("deposit.LBL_BTN_CANCEL")}&nbsp;<i class="fas fa-arrow-left" /></a
+      >
+      <a
+        href="."
+        class="btn btn-success"
+        on:click|preventDefault|stopPropagation={() => {
+          getTodayEntryLines();
+        }}>{$_("deposit.LBL_BTN_SAVE")}&nbsp;<i class="fas fa-check" /></a
+      >
+    </div>
+  </ModalDetails>
 {/if}
+
 {#if showModal4}
   <Modal on:close={() => (showModal4 = false)}>
     <Keypad bind:value={pin2} on:submit={() => getTodayEntryLines(pin2)} />
@@ -356,10 +434,50 @@
   </Modal>
 {/if}
 
+{#if showOtherListModal != false}
+  <ModalDetails on:close={() => (showOtherListModal = false)}>
+    <h2 slot="header" style="text-align:center;">Seleziona Collaboratori</h2>
+    {#each userListData as users, key}
+      <p
+        style="margin-bottom:0px;font-size:24px;{users.status
+          ? 'color:#ccc'
+          : ''}"
+      >
+        <input
+          type="radio"
+          id="employees{key}"
+          name="employees"
+          disabled={users.status}
+          value={users.id}
+        /><label for="employees{key}"
+          >&nbsp;{users.firstname}&nbsp;{users.lastname}</label
+        >
+      </p>
+    {/each}
+    <div slot="footer" class="d-flex justify-content-between mb-1">
+      <a
+        href="."
+        class="btn btn-danger"
+        on:click|preventDefault|stopPropagation={() => {
+          showOtherListModal = false;
+        }}
+        >{$_("deposit.LBL_BTN_CANCEL")}&nbsp;<i class="fas fa-arrow-left" /></a
+      >
+      <a
+        href="."
+        class="btn btn-success"
+        on:click|preventDefault|stopPropagation={() => {
+          createOtherTimesheet(showOtherListModal);
+        }}>{$_("deposit.LBL_BTN_SAVE")}&nbsp;<i class="fas fa-check" /></a
+      >
+    </div>
+  </ModalDetails>
+{/if}
+
 {#if otherActivities}
   <Modal on:close={() => (otherActivities = false)}>
     <div slot="header" style="text-align:center;">
-      <h1>{$_('nav.LBL_OTHER_TIMESHEETS_TITLE')}</h1>
+      <h1>{$_("nav.LBL_OTHER_TIMESHEETS_TITLE")}</h1>
     </div>
     {#await otherActivities}
       <p />
@@ -370,7 +488,8 @@
             class="list-group-item list-group-item-action p1-3 pt2"
             on:click={() => {
               otherActivities = false;
-              showOtherPinPad = [data.id, data.servicename];
+              userList("start");
+              showOtherListModal = [data.id, data.servicename];
               pin2 = "";
             }}
           >
@@ -381,6 +500,46 @@
     {/await}
     <div style="text-align:right;" slot="footer" />
   </Modal>
+{/if}
+
+{#if showUserListModal != false}
+  <ModalDetails on:close={() => (showUserListModal = false)}>
+    <h2 slot="header" style="text-align:center;">Seleziona Collaboratori</h2>
+    {#each userListData as users, key}
+      <p
+        style="margin-bottom:0px;font-size:24px;{users.status
+          ? 'color:#ccc'
+          : ''}"
+      >
+        <input
+          type="radio"
+          id="employees{key}"
+          name="employees"
+          disabled={users.status}
+          value={users.id}
+        /><label for="employees{key}"
+          >&nbsp;{users.firstname}&nbsp;{users.lastname}</label
+        >
+      </p>
+    {/each}
+    <div slot="footer" class="d-flex justify-content-between mb-1">
+      <a
+        href="."
+        class="btn btn-danger"
+        on:click|preventDefault|stopPropagation={() => {
+          showUserListModal = false;
+        }}
+        >{$_("deposit.LBL_BTN_CANCEL")}&nbsp;<i class="fas fa-arrow-left" /></a
+      >
+      <a
+        href="."
+        class="btn btn-success"
+        on:click|preventDefault|stopPropagation={() => {
+          getTodayEntryLines();
+        }}>{$_("deposit.LBL_BTN_SAVE")}&nbsp;<i class="fas fa-check" /></a
+      >
+    </div>
+  </ModalDetails>
 {/if}
 
 <style>
