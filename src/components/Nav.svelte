@@ -27,7 +27,7 @@
   async function userList(mode) {
     let element = {
       mode: mode,
-      salesorder_id: '15x0',
+      salesorder_id: "15x0",
     };
 
     const response = await fetch(
@@ -136,7 +136,6 @@
     let employees = [...document.getElementsByName("employees")];
     employees.forEach(async (child) => {
       if (child.checked) {
-
         let data = {
           userid: child.value,
           service_id: service[0],
@@ -188,32 +187,38 @@
     currentUser = settings.username;
   });
 
-  async function createEntryLine(type, authentication) {
-    let data = {
-      authentication: authentication,
-      type: type,
-    };
-    const response = await fetch(
-      baseURL +
-        "modules/SDK/src/modules/Webservices/backend.php?action=createEntryLine",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+  async function createEntryLine(type) {
+    let employees = [...document.getElementsByName("employees")];
+    employees.forEach(async (child) => {
+      if (child.checked) {
+        let data = {
+          userid: child.value,
+          type: type,
+        };
+        const response = await fetch(
+          baseURL +
+            "modules/SDK/src/modules/Webservices/backend.php?action=createEntryLine",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          }
+        );
+        showModal3 = false;
+        let res = await response.json();
+        console.log(res);
+        localStorage.setItem("refresh", "true");
+        var bootboxalert = bootbox.alert({
+          message: $_("backend." + res.message),
+          size: "small",
+        });
+        setTimeout(function () {
+          bootboxalert.modal("hide");
+        }, backend.popupAutocloseTime);
       }
-    );
-    showModal3 = false;
-    let res = await response.json();
-    localStorage.setItem("refresh", "true");
-    var bootboxalert = bootbox.alert({
-      message: $_("backend." + res.message),
-      size: "small",
     });
-    setTimeout(function () {
-      bootboxalert.modal("hide");
-    }, backend.popupAutocloseTime);
   }
 </script>
 
@@ -275,6 +280,7 @@
         href="."
         on:click|preventDefault={() => {
           showModal3 = "Entrance";
+          userList("ALL");
           pin2 = "";
         }}
         ><button class="btn btn-success my-2 my-sm-0">
@@ -285,6 +291,7 @@
         href="."
         on:click|preventDefault={() => {
           showModal3 = "Leaving";
+          userList("ALL");
           pin2 = "";
         }}
         ><button class="btn btn-danger my-2 my-sm-0">
@@ -382,7 +389,9 @@
 
 {#if showModal3 != false}
   <ModalDetails on:close={() => (showModal3 = false)}>
-    <h2 slot="header" style="text-align:center;">Seleziona Collaboratori</h2>
+    <h2 slot="header" style="text-align:center;">
+      {$_("home.LBL_SELECT_EMPLOYEES")}
+    </h2>
     {#each userListData as users, key}
       <p
         style="margin-bottom:0px;font-size:24px;{users.status
@@ -399,6 +408,10 @@
           >&nbsp;{users.firstname}&nbsp;{users.lastname}</label
         >
       </p>
+    {:else}
+      <div style="text-align:center">
+        <i class="fas fa-tire fa-spin fa-5x" />
+      </div>
     {/each}
     <div slot="footer" class="d-flex justify-content-between mb-1">
       <a
@@ -413,7 +426,7 @@
         href="."
         class="btn btn-success"
         on:click|preventDefault|stopPropagation={() => {
-          getTodayEntryLines();
+          createEntryLine(showModal3, pin2);
         }}>{$_("deposit.LBL_BTN_SAVE")}&nbsp;<i class="fas fa-check" /></a
       >
     </div>
@@ -436,7 +449,9 @@
 
 {#if showOtherListModal != false}
   <ModalDetails on:close={() => (showOtherListModal = false)}>
-    <h2 slot="header" style="text-align:center;">Seleziona Collaboratori</h2>
+    <h2 slot="header" style="text-align:center;">
+      {$_("home.LBL_SELECT_EMPLOYEES")}
+    </h2>
     {#each userListData as users, key}
       <p
         style="margin-bottom:0px;font-size:24px;{users.status
@@ -453,6 +468,10 @@
           >&nbsp;{users.firstname}&nbsp;{users.lastname}</label
         >
       </p>
+    {:else}
+      <div style="text-align:center">
+        <i class="fas fa-tire fa-spin fa-5x" />
+      </div>
     {/each}
     <div slot="footer" class="d-flex justify-content-between mb-1">
       <a
@@ -504,7 +523,9 @@
 
 {#if showUserListModal != false}
   <ModalDetails on:close={() => (showUserListModal = false)}>
-    <h2 slot="header" style="text-align:center;">Seleziona Collaboratori</h2>
+    <h2 slot="header" style="text-align:center;">
+      {$_("home.LBL_SELECT_EMPLOYEES")}
+    </h2>
     {#each userListData as users, key}
       <p
         style="margin-bottom:0px;font-size:24px;{users.status
@@ -521,6 +542,10 @@
           >&nbsp;{users.firstname}&nbsp;{users.lastname}</label
         >
       </p>
+    {:else}
+      <div style="text-align:center">
+        <i class="fas fa-tire fa-spin fa-5x" />
+      </div>
     {/each}
     <div slot="footer" class="d-flex justify-content-between mb-1">
       <a

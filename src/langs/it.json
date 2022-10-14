@@ -45,11 +45,11 @@
     "LBL_LOGIN_SUBTITLE": "Inserisci il tuo PIN personale o scansiona la carta"
   },
   "home": {
-    "LBL_BTN_CLOSE": "Chiudi",
+    "LBL_BTN_CLOSE": "Termina Lavoro",
     "LBL_BTN_CREATE_DEPOSIT": "Crea Deposito",
     "LBL_BTN_SHOW_DEPOSIT": "Visualizza Deposito",
     "LBL_BTN_START_WORK": "Avvia Lavorazione",
-    "LBL_BTN_STOP_WORK": "Ferma Lavorazione",
+    "LBL_BTN_STOP_WORK": "Pausa Lavorazione",
     "LBL_MAIN_TITLE": "Auto in Lavorazione",
     "LBL_OTHER_TITLE": "Altre Attività in Corso",
     "LBL_LOADING": "Caricamento",
@@ -70,7 +70,10 @@
     "LBL_TIMESHEETS_LIST": "Lista Lavorazioni",
     "LBL_EMPTY_TIMESHEETS": "Non sono presenti Lavorazioni",
     "LBL_SHOW_TIMESHEETS": "Mostra lavorazioni",
-    "LBL_TOTAL_HOURS": "Totale Ore Lavorate"
+    "LBL_TOTAL_HOURS": "Totale Ore Lavorate",
+    "LBL_MODIFY_VEHICLE": "Modifica Veicolo",
+    "LBL_SELECT_PRODUCT": "Seleziona Prodotto",
+    "LBL_SELECT_EMPLOYEES": "Seleziona Collaboratori"
   },
   "keypad": {
     "LBL_KEYPAD_TITLE": "Effettua l'accesso",

@@ -70,7 +70,10 @@
         "LBL_TIMESHEETS_LIST": "Processing List",
         "LBL_EMPTY_TIMESHEETS": "There are no processes",
         "LBL_SHOW_TIMESHEETS": "Show Timesheets",
-        "LBL_TOTAL_HOURS": "Total Worked Hours"
+        "LBL_TOTAL_HOURS": "Total Worked Hours",
+        "LBL_MODIFY_VEHICLE": "Modify Vehicle",
+        "LBL_SELECT_PRODUCT": "Select Product",
+        "LBL_SELECT_EMPLOYEES": "Select Employees"
     },
     "keypad": {
         "LBL_KEYPAD_TITLE": "Login",

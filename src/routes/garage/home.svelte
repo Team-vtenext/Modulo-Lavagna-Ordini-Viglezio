@@ -1,6 +1,7 @@
 <script>
   import Box from "../../components/Box.svelte";
   import ModalDetails from "../../components/ModalDetails.svelte";
+  import ModalProducts from "../../components/ModalProducts.svelte";
   import Modal from "../../components/Modal.svelte";
   import { onMount } from "svelte";
   import Keypad from "../../components/Keypad.svelte";
@@ -15,15 +16,20 @@
   let closeOrderModal = false;
   let showUserListModal = false;
   let userListData = [];
+  let editVehicleModal = false;
   let createDeposit = false;
+  let newDepositData = [];
+  let oldDepositData = [];
   let showTimesheetsModal = false;
   let timesheetData = [];
   let showTimeSheetModal = false;
   let showAdminTimeSheetModal = false;
   let showOtherTimesheetsModal = false;
   let showDepositModal = false;
+  let productsList = false;
   let showModalTimesheetsUser = "";
   let showModalDetails = false;
+  let showProductsList = false;
   let pin;
   let isAdmin;
   let settings;
@@ -41,6 +47,7 @@
         bootboxalert.modal("hide");
       }, backend.popupAutocloseTime);
       showModalDetails = false;
+      resetIntervals();
     });
     closeOrderModal = false;
   }
@@ -57,7 +64,30 @@
   async function startWork(data, mode, salesorder_id) {
     showUserListModal = data;
     showModalDetails = false;
+    userListData = [];
 
+    let element = {
+      mode: mode,
+      salesorder_id: salesorder_id,
+    };
+
+    const response = await fetch(
+      baseURL +
+        "modules/SDK/src/modules/Webservices/backend.php?action=getEmployeeList",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(element),
+      }
+    );
+    let res = await response.json();
+
+    userListData = res;
+  }
+
+  async function showWork(mode, salesorder_id) {
     let element = {
       mode: mode,
       salesorder_id: salesorder_id,
@@ -145,16 +175,118 @@
     return response.json();
   }
 
+  async function deferredLoadProducts() {
+    const response = await fetch(
+      baseURL +
+        "modules/SDK/src/modules/Webservices/backend.php?action=getProducts",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    productsList = await response.json();
+  }
+
   function openDepositModal(data) {
     showModalDetails = false;
     pin = "";
     createDeposit = data;
+    oldDepositData = JSON.parse(JSON.stringify(data));
   }
 
   async function showDeposit(data) {
+    showDepositModal = data;
+    oldDepositData = JSON.parse(JSON.stringify(data));
+    showModalDetails = false;
+  }
+
+  async function fetchProducts() {
+    window.jQuery(function () {
+      if (window.jQuery.fn.dataTable.isDataTable("#products_table")) {
+        //window.jQuery("#products_table").DataTable().clear();
+        //window.jQuery("#products_table").DataTable().draw();
+        //window.jQuery("#products_table").DataTable().ajax.reload();
+      } else {
+        var table = window.jQuery("#products_table").DataTable({
+          paging: true,
+          ordering: true,
+          bLengthChange: false,
+          data: productsList,
+          language: {
+            url: "https://cdn.datatables.net/plug-ins/1.12.1/i18n/it-IT.json",
+          },
+          initComplete: function () {
+            // Apply the search
+            this.api()
+              .columns()
+              .every(function () {
+                var that = this;
+
+                window
+                  .jQuery("input", this.footer())
+                  .on("keyup change clear", function () {
+                    if (that.search() !== this.value) {
+                      that.search(this.value).draw();
+                    }
+                  });
+              });
+            window.jQuery("#products_table").show();
+          },
+          /*ajax: {
+          url:
+            baseURL +
+            "modules/SDK/src/modules/Webservices/backend.php?action=getProducts",
+          type: "GET",
+        },*/
+          /*columns: [
+            { title: "Nome Prodotto" },
+            { title: "Codice Prodotto / SKU" },
+            { title: "Match Code" },
+            { title: "Stagione" },
+            { title: "id" },
+          ],*/
+          columnDefs: [
+            {
+              target: 4,
+              visible: false,
+              searchable: false,
+            },
+          ],
+        });
+
+        window.jQuery("#products_table tbody").on("click", "tr", function () {
+          var data = table.row(this).data();
+          showProductsList.cf_8pb_1309 = data[4];
+          showProductsList.cf_8pb_1309_display = data[0];
+          showDepositModal = showProductsList;
+
+          showProductsList = false;
+        });
+
+        window.jQuery("#products_table tfoot th").each(function () {
+          var title = window.jQuery(this).text();
+          window
+            .jQuery(this)
+            .html('<input type="text" placeholder="' + title + '" />');
+        });
+      }
+    });
+  }
+
+  async function updateVehicleInformation(crmid) {
+    let data = {
+      id: crmid,
+      plate: document.getElementById("plate").value,
+      chassis: document.getElementById("chassis").value,
+      cf_8pb_1203: document.getElementById("cf_8pb_1203").value,
+    };
+
     const response = await fetch(
       baseURL +
-        "modules/SDK/src/modules/Webservices/backend.php?action=showDeposit",
+        "modules/SDK/src/modules/Webservices/backend.php?action=updateVehicleInformation",
       {
         method: "POST",
         headers: {
@@ -164,8 +296,30 @@
       }
     );
     let res = await response.json();
-    showDepositModal = data;
-    showModalDetails = false;
+
+    editVehicleModal = { ...editVehicleModal, ...res.data };
+
+    var bootboxalert = bootbox.alert({
+      message: $_(res.message),
+      size: "small",
+    });
+    setTimeout(function () {
+      bootboxalert.modal("hide");
+    }, backend.popupAutocloseTime);
+    showModalDetails = editVehicleModal;
+    editVehicleModal = false;
+  }
+
+  function copyDepositData(newDeposit) {
+    newDeposit.cf_8pb_1305 = document.getElementById("cf_8pb_1305").value;
+    newDeposit.cf_8pb_1306 = document.getElementById("cf_8pb_1306").value;
+    newDeposit.cf_8pb_1307 = document.getElementById("cf_8pb_1307").value;
+    newDeposit.cf_8pb_1308 = document.getElementById("cf_8pb_1308").value;
+    newDeposit.cf_8pb_1309 = document.getElementById("cf_8pb_1309").value;
+    newDeposit.cf_8pb_1310 = document.getElementById("cf_8pb_1310").value;
+    newDeposit.cf_xpr_1684 = document.getElementById("cf_xpr_1684").value;
+    newDeposit.cf_8pb_1313 = document.getElementById("cf_8pb_1313").value;
+    newDeposit.cf_wym_1645 = document.getElementById("cf_wym_1645").value;
   }
 
   async function saveDeposit(crmid) {
@@ -514,7 +668,10 @@
               <Box pulse={data.sostatus} insurance_image={data.insurance_image}>
                 <div
                   slot="body"
-                  on:click|preventDefault={() => (showModalDetails = data)}
+                  on:click|preventDefault={() => {
+                    deferredLoadProducts();
+                    showModalDetails = data;
+                  }}
                 >
                   <div class="card-text" style="line-height:1;">
                     <div
@@ -535,7 +692,7 @@
                                 href="."
                                 class="btn-sm btn-success"
                                 on:click|preventDefault|stopPropagation={() =>
-                                  (closeOrderModal = data.id)}
+                                  closeOrder(data.id)}
                                 ><i class="fas fa-check" /></a
                               >
                             {/if}
@@ -732,7 +889,9 @@
 
   {#if showUserListModal != false}
     <ModalDetails on:close={() => (showUserListModal = false)}>
-      <h2 slot="header" style="text-align:center;">Seleziona Collaboratori</h2>
+      <h2 slot="header" style="text-align:center;">
+        {$_("home.LBL_SELECT_EMPLOYEES")}
+      </h2>
       {#each userListData as users, key}
         <p
           style="margin-bottom:0px;font-size:24px;{users.status
@@ -749,6 +908,10 @@
             >&nbsp;{users.firstname}&nbsp;{users.lastname}</label
           >
         </p>
+      {:else}
+        <div style="text-align:center">
+          <i class="fas fa-tire fa-spin fa-5x" />
+        </div>
       {/each}
       <div slot="footer" class="d-flex justify-content-between mb-1">
         <a
@@ -793,7 +956,7 @@
             <input
               type="text"
               id="cf_8pb_1305"
-              style="width:50%;"
+              style="width:50%;height:30px;"
               value={showDepositModal.cf_8pb_1305}
             />
           </div>
@@ -802,7 +965,7 @@
             <select
               id="cf_8pb_1307"
               required
-              style="width:50%;"
+              style="width:50%;height:30px;"
               value={showDepositModal.cf_8pb_1307}
             >
               <option value="" selected="">--Prego Selezionare--</option>
@@ -853,13 +1016,32 @@
           </div>
           <div class="d-flex justify-content-between mb-1">
             {$_("deposit.LBL_PRODUCT")}
-            <div>
+            <div style="width:50%;">
+              <input
+                type="hidden"
+                id="cf_8pb_1309"
+                value={showDepositModal.cf_8pb_1309}
+              />
               <input
                 type="text"
-                id="cf_8pb_1309"
-                style="width:50%;"
-                value={showDepositModal.cf_8pb_1309}
-              />&nbsp;<i class="fas fa-list" />
+                id="cf_8pb_1309_display"
+                style="width:85%;height:30px;"
+                on:click={() => {
+                  copyDepositData(showDepositModal);
+                  fetchProducts();
+                  showProductsList = showDepositModal;
+                  showDepositModal = false;
+                }}
+                value={showDepositModal.cf_8pb_1309_display}
+              />&nbsp;<i
+                class="fas fa-list fa-lg"
+                on:click={() => {
+                  copyDepositData(showDepositModal);
+                  fetchProducts();
+                  showProductsList = showDepositModal;
+                  showDepositModal = false;
+                }}
+              />
             </div>
           </div>
           <div class="d-flex justify-content-between mb-1">
@@ -868,7 +1050,7 @@
               id="cf_xpr_1684"
               name="cf_xpr_1684"
               tabindex=""
-              style="width:50%;"
+              style="width:50%;height:30px;"
               value={showDepositModal.cf_xpr_1684}
             >
               <option value="" selected="" />
@@ -944,7 +1126,7 @@
             <select
               id="cf_8pb_1306"
               required
-              style="width:50%;"
+              style="width:50%;height:30px;"
               value={showDepositModal.cf_8pb_1306}
             >
               <option value="">--Prego Selezionare--</option>
@@ -957,7 +1139,7 @@
             <select
               id="cf_8pb_1308"
               required
-              style="width:50%;"
+              style="width:50%;height:30px;"
               value={showDepositModal.cf_8pb_1308}
             >
               <option value="" selected="">--Prego Selezionare--</option>
@@ -1011,7 +1193,7 @@
             <input
               type="text"
               id="cf_8pb_1310"
-              style="width:50%;"
+              style="width:50%;height:30px;"
               value={showDepositModal.cf_8pb_1310}
             />
           </div>
@@ -1020,7 +1202,7 @@
             <select
               id="cf_8pb_1313"
               required
-              style="width:50%;"
+              style="width:50%;height:30px;"
               value={showDepositModal.cf_8pb_1313}
             >
               <option value="">--Prego Selezionare--</option>
@@ -1034,7 +1216,7 @@
             <input
               type="text"
               id="cf_wym_1645"
-              style="width:50%;"
+              style="width:50%;height:30px;"
               value={showDepositModal.cf_wym_1645}
             />
           </div>
@@ -1045,7 +1227,7 @@
           href="."
           class="btn btn-danger"
           on:click|preventDefault|stopPropagation={() => {
-            showModalDetails = showDepositModal;
+            showModalDetails = oldDepositData;
             showDepositModal = false;
           }}
           >{$_("deposit.LBL_BTN_CANCEL")}&nbsp;<i
@@ -1063,6 +1245,78 @@
     </ModalDetails>
   {/if}
 
+  {#if editVehicleModal != false}
+    <ModalDetails
+      on:close={() => {
+        showModalDetails = editVehicleModal;
+        editVehicleModal = false;
+      }}
+    >
+      <h2 slot="header" style="text-align:center;">
+        {$_("home.LBL_MODIFY_VEHICLE")}
+      </h2>
+      <div class="row">
+        <div class="col">
+          <div class="d-flex justify-content-between mb-1">
+            {$_("home.plate")}
+            <input
+              type="text"
+              id="plate"
+              style="width:50%;"
+              value={editVehicleModal.plate == undefined
+                ? ""
+                : editVehicleModal.plate}
+            />
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            {$_("home.kilometers")}
+            <input
+              type="text"
+              id="cf_8pb_1203"
+              style="width:50%;"
+              value={editVehicleModal.cf_8pb_1203 == undefined
+                ? ""
+                : editVehicleModal.cf_8pb_1203}
+            />
+          </div>
+        </div>
+        <div class="col">
+          <div class="d-flex justify-content-between mb-1">
+            {$_("home.chassis_no")}
+            <input
+              type="text"
+              id="chassis"
+              style="width:50%;"
+              value={editVehicleModal.chassis == undefined
+                ? ""
+                : editVehicleModal.chassis}
+            />
+          </div>
+        </div>
+      </div>
+      <div slot="footer" class="d-flex justify-content-between mb-1">
+        <a
+          href="."
+          class="btn btn-danger"
+          on:click|preventDefault|stopPropagation={() => {
+            showModalDetails = editVehicleModal;
+            editVehicleModal = false;
+          }}
+          >{$_("deposit.LBL_BTN_CANCEL")}&nbsp;<i
+            class="fas fa-arrow-left"
+          /></a
+        >
+        <a
+          href="."
+          class="btn btn-success"
+          on:click|preventDefault|stopPropagation={() => {
+            updateVehicleInformation(editVehicleModal.id);
+          }}>{$_("deposit.LBL_BTN_SAVE")}&nbsp;<i class="fas fa-check" /></a
+        >
+      </div>
+    </ModalDetails>
+  {/if}
+
   {#if createDeposit != false}
     <ModalDetails on:close={() => (createDeposit = false)}>
       <h2 slot="header" style="text-align:center;">
@@ -1072,11 +1326,15 @@
         <div class="col">
           <div class="d-flex justify-content-between mb-1">
             {$_("deposit.LBL_QUANTITY")}
-            <input type="text" id="cf_8pb_1305" style="width:50%;" />
+            <input
+              type="text"
+              id="cf_8pb_1305"
+              style="width:50%;height:30px;"
+            />
           </div>
           <div class="d-flex justify-content-between mb-1">
             {$_("deposit.LBL_FRONT_CONSUMPTION")}
-            <select id="cf_8pb_1307" required style="width:50%;">
+            <select id="cf_8pb_1307" required style="width:50%;height:30px;">
               <option value="" selected="">--Prego Selezionare--</option>
               <option value="0">0</option>
               <option value="5 Necessaria Sostituzione Immediata!"
@@ -1125,9 +1383,24 @@
           </div>
           <div class="d-flex justify-content-between mb-1">
             {$_("deposit.LBL_PRODUCT")}
-            <div>
-              <input type="text" id="cf_8pb_1309" style="width:50%;" />&nbsp;<i
-                class="fas fa-list"
+            <div style="width:50%;">
+              <input type="hidden" id="cf_8pb_1309" />
+              <input
+                type="text"
+                id="cf_8pb_1309_display"
+                style="width:85%;height:30px;"
+                on:click={() => {
+                  fetchProducts();
+                  showProductsList = createDeposit;
+                  createDeposit = false;
+                }}
+              />&nbsp;<i
+                class="fas fa-list fa-lg"
+                on:click={() => {
+                  fetchProducts();
+                  showProductsList = createDeposit;
+                  createDeposit = false;
+                }}
               />
             </div>
           </div>
@@ -1137,7 +1410,7 @@
               id="cf_xpr_1684"
               name="cf_xpr_1684"
               tabindex=""
-              style="width:50%;"
+              style="width:50%;height:30px;"
             >
               <option value="" selected="" />
               <option value="1 A">1 A</option>
@@ -1209,7 +1482,7 @@
         <div class="col">
           <div class="d-flex justify-content-between mb-1">
             {$_("deposit.LBL_CAR_RIMS")}
-            <select id="cf_8pb_1306" required style="width:50%;">
+            <select id="cf_8pb_1306" required style="width:50%;height:30px;">
               <option value="">--Prego Selezionare--</option>
               <option value="Si">Si</option>
               <option value="No">No</option>
@@ -1217,7 +1490,7 @@
           </div>
           <div class="d-flex justify-content-between mb-1">
             {$_("deposit.LBL_REAR_CONSUMPTION")}
-            <select id="cf_8pb_1308" required style="width:50%;">
+            <select id="cf_8pb_1308" required style="width:50%;height:30px;">
               <option value="" selected="">--Prego Selezionare--</option>
               <option value="0">0</option>
               <option value="5 Necessaria Sostituzione Immediata!"
@@ -1266,11 +1539,15 @@
           </div>
           <div class="d-flex justify-content-between mb-1">
             {$_("deposit.LBL_MANUAL_PRODUCT")}
-            <input type="text" id="cf_8pb_1310" style="width:50%;" />
+            <input
+              type="text"
+              id="cf_8pb_1310"
+              style="width:50%;height:30px;"
+            />
           </div>
           <div class="d-flex justify-content-between mb-1">
             {$_("deposit.LBL_SEASON")}
-            <select id="cf_8pb_1313" required style="width:50%;">
+            <select id="cf_8pb_1313" required style="width:50%;height:30px;">
               <option value="">--Prego Selezionare--</option>
               <option value="IN">IN</option>
               <option value="ES">ES</option>
@@ -1279,7 +1556,11 @@
           </div>
           <div class="d-flex justify-content-between mb-1">
             {$_("deposit.LBL_DIFFERENT_AXIS_MEASURE")}
-            <input type="text" id="cf_wym_1645" style="width:50%;" />
+            <input
+              type="text"
+              id="cf_wym_1645"
+              style="width:50%;height:30px;"
+            />
           </div>
         </div>
       </div>
@@ -1288,7 +1569,7 @@
           href="."
           class="btn btn-danger"
           on:click|preventDefault|stopPropagation={() => {
-            showModalDetails = createDeposit;
+            showModalDetails = oldDepositData;
             createDeposit = false;
           }}
           >{$_("deposit.LBL_BTN_CANCEL")}&nbsp;<i
@@ -1308,7 +1589,9 @@
 
   {#if showTimesheetsModal != false}
     <ModalDetails on:close={() => (showTimesheetsModal = false)}>
-      <h2 slot="header" style="text-align:center;">Seleziona Collaboratori</h2>
+      <h2 slot="header" style="text-align:center;">
+        {$_("home.LBL_SELECT_EMPLOYEES")}
+      </h2>
       {#each userListData as users}
         <p
           style="margin-bottom:0px;font-size:24px;{users.status
@@ -1316,12 +1599,16 @@
             : ''}"
         >
           <input
-            type="checkbox"
+            type="radio"
             name="employees"
             disabled={users.status}
             value={users.id}
           />&nbsp;{users.firstname}&nbsp;{users.lastname}
         </p>
+      {:else}
+        <div style="text-align:center">
+          <i class="fas fa-tire fa-spin fa-5x" />
+        </div>
       {/each}
       <div slot="footer" class="d-flex justify-content-between mb-1">
         <a
@@ -1339,10 +1626,11 @@
           href="."
           class="btn btn-success"
           on:click|preventDefault|stopPropagation={() => {
-            updateInventoryRow(
-              showUserListModal.id,
-              showUserListModal.salesorder_no
-            );
+            showModalTimesheetsUser = document.querySelector(
+              'input[name="employees"]:checked'
+            ).value;
+            showTimeSheetModal = showTimesheetsModal;
+            showTimesheetsModal = false;
           }}>{$_("deposit.LBL_BTN_SAVE")}&nbsp;<i class="fas fa-check" /></a
         >
       </div>
@@ -1358,6 +1646,51 @@
         on:submit={closeOtherTimesheet(showOtherTimesheetsModal, pin, isAdmin)}
       />
     </Modal>
+  {/if}
+
+  {#if showProductsList != false}
+    <ModalProducts
+      on:close={() => {
+        showDepositModal = showProductsList;
+        showProductsList = false;
+      }}
+    >
+      <h2 slot="header" style="text-align:center;">
+        {$_("home.LBL_SELECT_PRODUCT")}
+      </h2>
+      {#if productsList != false}
+        {void fetchProducts() ?? ""}
+        <table
+          id="products_table"
+          class="display"
+          style="display:none"
+          width="100%"
+        >
+          <thead>
+            <tr>
+              <th>Nome Prodotto</th>
+              <th>Codice Prodotto / SKU</th>
+              <th>Match Code</th>
+              <th>Stagione</th>
+              <th>id</th>
+            </tr>
+          </thead>
+          <tfoot>
+            <tr>
+              <th>Nome Prodotto</th>
+              <th>Codice Prodotto / SKU</th>
+              <th>Match Code</th>
+              <th>Stagione</th>
+              <th>id</th>
+            </tr>
+          </tfoot>
+        </table>
+      {:else}
+        <div style="text-align:center">
+          <i class="fas fa-tire fa-spin fa-5x" />
+        </div>
+      {/if}
+    </ModalProducts>
   {/if}
 
   {#if showAdminTimeSheetModal != false}
@@ -1425,7 +1758,12 @@
   {/if}
 
   {#if showTimeSheetModal != false}
-    <Modal on:close={() => (showTimeSheetModal = false)}>
+    <Modal
+      on:close={() => {
+        showModalDetails = showTimeSheetModal;
+        showTimeSheetModal = false;
+      }}
+    >
       <h2 slot="header" style="text-align:center;">
         {$_("home.LBL_TIMESHEETS_LIST")}
       </h2>
@@ -1433,7 +1771,7 @@
         class="list-group mb-3 text-left"
         style="max-height:30rem;overflow-y:auto;"
       >
-        {#each timesheetData as data}
+        {#each showTimeSheetModal.timesheets as data}
           {#if data.employee_id == showModalTimesheetsUser || showModalTimesheetsUser == "admin"}
             <div class="list-group-item list-group-item-action">
               <div class="row">
@@ -1478,7 +1816,10 @@
       </div>
       <div slot="footer" style="text-align:right;">
         <b>{$_("home.LBL_TOTAL_HOURS")}:</b>
-        {getTimesheetsTotalHours(timesheetData, showModalTimesheetsUser)}
+        {getTimesheetsTotalHours(
+          showTimeSheetModal.timesheets,
+          showModalTimesheetsUser
+        )}
       </div></Modal
     >
   {/if}
@@ -1577,7 +1918,8 @@
           <i
             class="fas fa-pen text-success"
             on:click={() => {
-              console.log("test");
+              editVehicleModal = showModalDetails;
+              showModalDetails = false;
             }}
           />
         </div>
@@ -1691,17 +2033,18 @@
           {/if}
         </div>
         <div>
-          {#if showModalDetails.timesheets.length > 0}
+          <!--{#if showModalDetails.timesheets.length > 0}
             <button
               type="button"
               class="btn btn-info"
               on:click|preventDefault={() => {
-                showTimesheetsModal = showModalDetails.timesheets;
+                showWork(showModalDetails, "ALL", showModalDetails.id);
+                showTimesheetsModal = showModalDetails;
                 pin = "";
                 showModalDetails = false;
               }}>{$_("home.LBL_SHOW_TIMESHEETS")}</button
             >
-          {/if}
+          {/if}-->
         </div>
       </div>
     </ModalDetails>
